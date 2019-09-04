@@ -1,12 +1,12 @@
 <?php
 
-define('LH_DATA_DIR', 'linkchecker_highlight');
 
 /**
  * @file
  * Highlights broken links.
  */
 
+define('LH_DATA_DIR', 'linkchecker_highlight');
 define('LC_HIGHLIGHT_PERM', 'view highlighted broken links');
 define('LC_HIGHLIGHT_OWN_PERM', 'view own highlighted broken links');
 define('LC_HIGHLIGHT_NODE_ACCESS_PERM', 'view accessible highlighted broken links');
@@ -60,17 +60,25 @@ function linkchecker_highlight_permission() {
 function linkchecker_highlight_preprocess_page(&$vars) {
   if (user_access(LC_HIGHLIGHT_OWN_PERM) || user_access(LC_HIGHLIGHT_PERM) || user_access(LC_HIGHLIGHT_NODE_ACCESS_PERM)) {
     drupal_add_css(drupal_get_path('module', 'linkchecker_highlight') . '/linkchecker_highlight.css', array('type' => 'file'));
-  $js = variable_get('linkchecker_highlight_js_file', '');
-  $js_file = file_build_uri(LH_DATA_DIR . '/' . $js);
-  drupal_add_js($js_file, array('type' => 'file', 'scope' => 'footer', 'group' => JS_DEFAULT, 'defer' => TRUE));
-
+    $js = variable_get('linkchecker_highlight_js_file', '');
+    $js_file = file_build_uri(LH_DATA_DIR . '/' . $js);
+    drupal_add_js($js_file, array('type' => 'file', 'scope' => 'footer', 'group' => JS_DEFAULT, 'defer' => TRUE));
   }
 }
 
+/**
+ * Implements hook_cron().
+ */
 function linkchecker_highlight_cron() {
   linkchecker_highlight_create_js();
 }
 
+/**
+ * Creates a js file to highlight broken links instead of creating it on each page load.
+ *
+ * @return
+ *   Either TRUE or FALSE depending on whether the file is successfully created.
+ */
 function linkchecker_highlight_create_js() {
     $ignore_response_codes = preg_split('/(\r\n?|\n)/', variable_get('linkchecker_ignore_response_codes', "200\n206\n302\n304\n401\n403"));
 
@@ -106,10 +114,10 @@ function linkchecker_highlight_create_js() {
       }
       $title = (!empty($data->error)) ? t('Broken Link') . " ($data->code): $data->error" : t('Broken Link') . " ($data->code)";
       $js_add_classes[] = <<<END
-var selector = "a[href^=\"{$data->url}\"]";
-jQuery(selector).addClass("broken-link broken-link-{$data->code}");
-jQuery(selector).attr("title", "$title");
-END;
+        var selector = "a[href^=\"{$data->url}\"]";
+        jQuery(selector).addClass("broken-link broken-link-{$data->code}");
+        jQuery(selector).attr("title", "$title");
+        END;
     }
 
     $js = "jQuery(document).ready(function() {";
